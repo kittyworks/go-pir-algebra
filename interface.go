@@ -45,4 +45,10 @@ type Field interface {
 
 	// convert field to a string to display
 	ToString(Field) string
+
+	// returns a indetity element of addition
+	GetAddElement() Field
+
+	// returns a indetity element of multiply
+	GetMulElement() Field
 }
