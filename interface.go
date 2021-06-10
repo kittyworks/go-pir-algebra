@@ -1,32 +1,14 @@
 package algebra
 
-type Field interface {
+type Group interface {
 	// returns result of a + b
 	Add(Field) Field
 
 	// returns result of a - b
 	Sub(Field) Field
 
-	// returns result of a * b
-	Mul(Field) Field
-
-	// returns result of a / b
-	Div(Field) Field
-
 	// returns -a
 	Neg() Field
-
-	// returns root of a
-	Square() Field
-
-	// returns square of a
-	Sqrt() Field
-
-	// returns 1/a
-	Inv() Field
-
-	// returns a ^ b
-	Exp(Field) Field
 
 	// returns true if a = b
 	Eq(Field) bool
@@ -48,6 +30,36 @@ type Field interface {
 
 	// returns a indetity element of addition
 	GetAddElement() Field
+}
+
+type Ring interface {
+	Group
+
+	// returns result of a * b
+	Mul(Field) Field
+
+	// returns a ^ b
+	Exp(Field) Field
+
+	// returns a * a
+	Square() Field
+}
+
+type IntegralDomain interface {
+	Ring
+
+	// returns result of a / b
+	Div(Field) Field
+
+	// returns 1/a
+	Inv() Field
+
+	// returns root of a
+	Sqrt() Field
+}
+
+type Field interface {
+	IntegralDomain
 
 	// returns a indetity element of multiply
 	GetMulElement() Field
