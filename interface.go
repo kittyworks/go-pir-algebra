@@ -45,8 +45,12 @@ type Ring interface {
 	Square() Field
 }
 
-type IntegralDomain interface {
+type CommutativeRing interface {
 	Ring
+}
+
+type IntegralDomain interface {
+	CommutativeRing
 
 	// returns result of a / b
 	Div(Field) Field
@@ -63,4 +67,8 @@ type Field interface {
 
 	// returns a indetity element of multiply
 	GetMulElement() Field
+}
+
+type FiniteField interface {
+	Field
 }
