@@ -9,9 +9,9 @@ import (
 package ffblas
 
 type FFFloat64 interface {
-	FFzp.ElementLevel1
-	FFzp.ElementLevel2
-	FFzp.ElementLevel3
+	FFFloat64Level1
+	FFFloat64Level2
+	FFFloat64Level3
 }
 
 type FFFloat64Level1 interface {
@@ -29,7 +29,6 @@ type FFFloat64Level1 interface {
 	Dscal(n int, alpha zp.Element, x []zp.Element, incX int)
 }
 
-// zp.ElementLevel2 implements the double precision real BLAS Level 2 routines.
 type FFFloat64Level2 interface {
 	Dgemv(tA Transpose, m, n int, alpha zp.Element, a []zp.Element, lda int, x []zp.Element, incX int, beta zp.Element, y []zp.Element, incY int)
 	Dgbmv(tA Transpose, m, n, kL, kU int, alpha zp.Element, a []zp.Element, lda int, x []zp.Element, incX int, beta zp.Element, y []zp.Element, incY int)
@@ -49,7 +48,6 @@ type FFFloat64Level2 interface {
 	Dspr2(ul Uplo, n int, alpha zp.Element, x []zp.Element, incX int, y []zp.Element, incY int, a []zp.Element)
 }
 
-// zp.ElementLevel3 implements the double precision real BLAS Level 3 routines.
 type FFFloat64Level3 interface {
 	Dgemm(tA, tB Transpose, m, n, k int, alpha zp.Element, a []zp.Element, lda int, b []zp.Element, ldb int, beta zp.Element, c []zp.Element, ldc int)
 	Dsymm(s Side, ul Uplo, m, n int, alpha zp.Element, a []zp.Element, lda int, b []zp.Element, ldb int, beta zp.Element, c []zp.Element, ldc int)
