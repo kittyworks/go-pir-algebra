@@ -12,9 +12,12 @@ package f64
 //  	sum += y[i] * v
 //  }
 //  return sum
-func DotUnitary(x, y []float64) (sum float64) {
+func DotUnitary(x, y []zp.Element) (sum zp.Element) {
 	for i, v := range x {
-		sum += y[i] * v
+		//sum += y[i] * v
+		a := zp.Element{}
+		a.mul(y[i],v)
+		sum.Add(a,sum)
 	}
 	return sum
 }
@@ -26,7 +29,7 @@ func DotUnitary(x, y []float64) (sum float64) {
 //  	iy += incY
 //  }
 //  return sum
-func DotInc(x, y []float64, n, incX, incY, ix, iy uintptr) (sum float64) {
+func DotInc(x, y []zp.Element, n, incX, incY, ix, iy uintptr) (sum zp.Element) {
 	for i := 0; i < int(n); i++ {
 		sum += y[iy] * x[ix]
 		ix += incX
