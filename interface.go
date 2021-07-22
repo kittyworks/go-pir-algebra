@@ -10,6 +10,9 @@ type Group interface {
 	// returns -a
 	Neg() Field
 
+	// returns a * n
+	AddTimes(int) Field
+
 	// returns true if a = b
 	Eq(Field) bool
 
