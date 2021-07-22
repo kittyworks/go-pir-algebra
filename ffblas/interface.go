@@ -8,13 +8,13 @@ import (
 
 package ffblas
 
-type FFFloat64 interface {
-	FFFloat64Level1
-	FFFloat64Level2
-	FFFloat64Level3
+type FF interface {
+	FFLevel1
+	FFLevel2
+	FFLevel3
 }
 
-type FFFloat64Level1 interface {
+type FFLevel1 interface {
 	Ddot(n int, x []zp.Element, incX int, y []zp.Element, incY int) zp.Element
 	Dnrm2(n int, x []zp.Element, incX int) zp.Element
 	Dasum(n int, x []zp.Element, incX int) zp.Element
@@ -29,7 +29,7 @@ type FFFloat64Level1 interface {
 	Dscal(n int, alpha zp.Element, x []zp.Element, incX int)
 }
 
-type FFFloat64Level2 interface {
+type FFLevel2 interface {
 	Dgemv(tA Transpose, m, n int, alpha zp.Element, a []zp.Element, lda int, x []zp.Element, incX int, beta zp.Element, y []zp.Element, incY int)
 	Dgbmv(tA Transpose, m, n, kL, kU int, alpha zp.Element, a []zp.Element, lda int, x []zp.Element, incX int, beta zp.Element, y []zp.Element, incY int)
 	Dtrmv(ul Uplo, tA Transpose, d Diag, n int, a []zp.Element, lda int, x []zp.Element, incX int)
@@ -48,7 +48,7 @@ type FFFloat64Level2 interface {
 	Dspr2(ul Uplo, n int, alpha zp.Element, x []zp.Element, incX int, y []zp.Element, incY int, a []zp.Element)
 }
 
-type FFFloat64Level3 interface {
+type FFLevel3 interface {
 	Dgemm(tA, tB Transpose, m, n, k int, alpha zp.Element, a []zp.Element, lda int, b []zp.Element, ldb int, beta zp.Element, c []zp.Element, ldc int)
 	Dsymm(s Side, ul Uplo, m, n int, alpha zp.Element, a []zp.Element, lda int, b []zp.Element, ldb int, beta zp.Element, c []zp.Element, ldc int)
 	Dsyrk(ul Uplo, t Transpose, n, k int, alpha zp.Element, a []zp.Element, lda int, beta zp.Element, c []zp.Element, ldc int)

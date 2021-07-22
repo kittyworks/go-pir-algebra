@@ -15,7 +15,7 @@ var ffblas blas.FFFloat64 = gonum.Implementation{}
 // Use sets the BLAS zp.Element implementation to be used by subsequent BLAS calls.
 // The default implementation is
 // gonum.org/v1/gonum/blas/gonum.Implementation.
-func Use(b blas.FFFFzp.Element) {
+func Use(b blas.FF) {
 	ffblas = b
 }
 
@@ -23,7 +23,7 @@ func Use(b blas.FFFFzp.Element) {
 //
 // Implementation allows direct calls to the current the BLAS zp.Element implementation
 // giving finer control of parameters.
-func Implementation() blas.FFzp.Element {
+func Implementation() blas.FF {
 	return ffblas
 }
 
