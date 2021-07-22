@@ -31,7 +31,10 @@ func DotUnitary(x, y []zp.Element) (sum zp.Element) {
 //  return sum
 func DotInc(x, y []zp.Element, n, incX, incY, ix, iy uintptr) (sum zp.Element) {
 	for i := 0; i < int(n); i++ {
-		sum += y[iy] * x[ix]
+		//sum += y[iy] * x[ix]
+		a := zp.Element{}
+		a.Mul(y[iy],x[ix])
+		sum.Add(a,sum)
 		ix += incX
 		iy += incY
 	}
