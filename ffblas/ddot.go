@@ -5,12 +5,12 @@
 package gonum
 
 import (
-	"gonum.org/v1/gonum/internal/asm/f64"
+	"go-pir-algebra/ffblas/asm"
 )
 
 // Ddot computes the dot product of the two vectors
 //  \sum_i x[i]*y[i]
-func (Implementation) Ddot(n int, x []float64, incX int, y []float64, incY int) float64 {
+func (Implementation) Ddot(n int, x []zp.Element, incX int, y []zp.Element, incY int) zp.Element {
 	if incX == 0 {
 		panic(zeroIncX)
 	}
@@ -30,7 +30,7 @@ func (Implementation) Ddot(n int, x []float64, incX int, y []float64, incY int) 
 		if len(y) < n {
 			panic(shortY)
 		}
-		return f64.DotUnitary(x[:n], y[:n])
+		return asm.DotUnitary(x[:n], y[:n])
 	}
 	var ix, iy int
 	if incX < 0 {
@@ -45,5 +45,5 @@ func (Implementation) Ddot(n int, x []float64, incX int, y []float64, incY int) 
 	if iy >= len(y) || iy+(n-1)*incY >= len(y) {
 		panic(shortY)
 	}
-	return f64.DotInc(x, y, uintptr(n), uintptr(incX), uintptr(incY), uintptr(ix), uintptr(iy))
+	return asm.DotInc(x, y, uintptr(n), uintptr(incX), uintptr(incY), uintptr(ix), uintptr(iy))
 }
