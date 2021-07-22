@@ -10,7 +10,7 @@ import (
 	"github.com/kittyworks/go-pir-algebra/ffblas"
 )
 
-var ffblas blas.FFFloat64 = gonum.Implementation{}
+var ffblas blas.FF = gonum.Implementation{}
 
 // Use sets the BLAS zp.Element implementation to be used by subsequent BLAS calls.
 // The default implementation is
