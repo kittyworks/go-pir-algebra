@@ -8,15 +8,15 @@ import (
 	"math"
 
 	"gonum.org/v1/gonum/blas"
-	"gonum.org/v1/gonum/internal/asm/f64"
+	"gonum.org/v1/gonum/internal/asm"
 )
 
-var _ blas.Float64Level1 = Implementation{}
+var _ blas.zp.ElementLevel1 = Implementation{}
 
 // Dnrm2 computes the Euclidean norm of a vector,
 //  sqrt(\sum_i x[i] * x[i]).
 // This function returns 0 if incX is negative.
-func (Implementation) Dnrm2(n int, x []float64, incX int) float64 {
+func (Implementation) Dnrm2(n int, x []zp.Element, incX int) zp.Element {
 	if incX < 1 {
 		if incX == 0 {
 			panic(zeroIncX)
@@ -36,16 +36,16 @@ func (Implementation) Dnrm2(n int, x []float64, incX int) float64 {
 		panic(nLT0)
 	}
 	if incX == 1 {
-		return f64.L2NormUnitary(x[:n])
+		return asm.L2NormUnitary(x[:n])
 	}
-	return f64.L2NormInc(x, uintptr(n), uintptr(incX))
+	return asm.L2NormInc(x, uintptr(n), uintptr(incX))
 }
 
 // Dasum computes the sum of the absolute values of the elements of x.
 //  \sum_i |x[i]|
 // Dasum returns 0 if incX is negative.
-func (Implementation) Dasum(n int, x []float64, incX int) float64 {
-	var sum float64
+func (Implementation) Dasum(n int, x []zp.Element, incX int) zp.Element {
+	var sum zp.Element
 	if n < 0 {
 		panic(nLT0)
 	}
@@ -74,7 +74,7 @@ func (Implementation) Dasum(n int, x []float64, incX int) float64 {
 // Idamax returns the index of an element of x with the largest absolute value.
 // If there are multiple such indices the earliest is returned.
 // Idamax returns -1 if n == 0.
-func (Implementation) Idamax(n int, x []float64, incX int) int {
+func (Implementation) Idamax(n int, x []zp.Element, incX int) int {
 	if incX < 1 {
 		if incX == 0 {
 			panic(zeroIncX)
@@ -120,7 +120,7 @@ func (Implementation) Idamax(n int, x []float64, incX int) int {
 
 // Dswap exchanges the elements of two vectors.
 //  x[i], y[i] = y[i], x[i] for all i
-func (Implementation) Dswap(n int, x []float64, incX int, y []float64, incY int) {
+func (Implementation) Dswap(n int, x []zp.Element, incX int, y []zp.Element, incY int) {
 	if incX == 0 {
 		panic(zeroIncX)
 	}
@@ -162,7 +162,7 @@ func (Implementation) Dswap(n int, x []float64, incX int, y []float64, incY int)
 
 // Dcopy copies the elements of x into the elements of y.
 //  y[i] = x[i] for all i
-func (Implementation) Dcopy(n int, x []float64, incX int, y []float64, incY int) {
+func (Implementation) Dcopy(n int, x []zp.Element, incX int, y []zp.Element, incY int) {
 	if incX == 0 {
 		panic(zeroIncX)
 	}
@@ -201,7 +201,7 @@ func (Implementation) Dcopy(n int, x []float64, incX int, y []float64, incY int)
 
 // Daxpy adds alpha times x to y
 //  y[i] += alpha * x[i] for all i
-func (Implementation) Daxpy(n int, alpha float64, x []float64, incX int, y []float64, incY int) {
+func (Implementation) Daxpy(n int, alpha zp.Element, x []zp.Element, incX int, y []zp.Element, incY int) {
 	if incX == 0 {
 		panic(zeroIncX)
 	}
@@ -224,7 +224,7 @@ func (Implementation) Daxpy(n int, alpha float64, x []float64, incX int, y []flo
 		return
 	}
 	if incX == 1 && incY == 1 {
-		f64.AxpyUnitary(alpha, x[:n], y[:n])
+		asm.AxpyUnitary(alpha, x[:n], y[:n])
 		return
 	}
 	var ix, iy int
@@ -234,7 +234,7 @@ func (Implementation) Daxpy(n int, alpha float64, x []float64, incX int, y []flo
 	if incY < 0 {
 		iy = (-n + 1) * incY
 	}
-	f64.AxpyInc(alpha, x, y, uintptr(n), uintptr(incX), uintptr(incY), uintptr(ix), uintptr(iy))
+	asm.AxpyInc(alpha, x, y, uintptr(n), uintptr(incX), uintptr(incY), uintptr(ix), uintptr(iy))
 }
 
 // Drotg computes a plane rotation
@@ -263,7 +263,7 @@ func (Implementation) Daxpy(n int, alpha float64, x []float64, incX int, y []flo
 // BLAS technical manual regarding the sign for r when a or b are zero. Drotg
 // agrees with the definition in the manual and other common BLAS
 // implementations.
-func (Implementation) Drotg(a, b float64) (c, s, r, z float64) {
+func (Implementation) Drotg(a, b zp.Element) (c, s, r, z zp.Element) {
 	// Implementation based on Supplemental Material to:
 	// Edward Anderson. 2017. Algorithm 978: Safe Scaling in the Level 1 BLAS.
 	// ACM Trans. Math. Softw. 44, 1, Article 12 (July 2017), 28 pages.
@@ -288,7 +288,7 @@ func (Implementation) Drotg(a, b float64) (c, s, r, z float64) {
 	default:
 		maxab := math.Max(anorm, bnorm)
 		scl := math.Min(math.Max(safmin, maxab), safmax)
-		var sigma float64
+		var sigma zp.Element
 		if anorm > bnorm {
 			sigma = math.Copysign(1, a)
 		} else {
@@ -314,7 +314,7 @@ func (Implementation) Drotg(a, b float64) (c, s, r, z float64) {
 // Drotmg computes the modified Givens rotation. See
 // http://www.netlib.org/lapack/explore-html/df/deb/drotmg_8f.html
 // for more details.
-func (Implementation) Drotmg(d1, d2, x1, y1 float64) (p blas.DrotmParams, rd1, rd2, rx1 float64) {
+func (Implementation) Drotmg(d1, d2, x1, y1 zp.Element) (p blas.DrotmParams, rd1, rd2, rx1 zp.Element) {
 	// The implementation of Drotmg used here is taken from Hopkins 1997
 	// Appendix A: https://doi.org/10.1145/289251.289253
 	// with the exception of the gam constants below.
@@ -335,7 +335,7 @@ func (Implementation) Drotmg(d1, d2, x1, y1 float64) (p blas.DrotmParams, rd1, r
 		return p, d1, d2, x1
 	}
 
-	var h11, h12, h21, h22 float64
+	var h11, h12, h21, h22 zp.Element
 	if (d1 == 0 || x1 == 0) && d2 > 0 {
 		p.Flag = blas.Diagonal
 		h12 = 1
@@ -353,7 +353,7 @@ func (Implementation) Drotmg(d1, d2, x1, y1 float64) (p blas.DrotmParams, rd1, r
 			h22 = 1
 			h21 = -y1 / x1
 			h12 = p2 / p1
-			u := 1 - float64(h12*h21)
+			u := 1 - zp.Element(h12*h21)
 			if u <= 0 {
 				p.Flag = blas.Rescaling // Error state.
 				return p, 0, 0, 0
@@ -373,7 +373,7 @@ func (Implementation) Drotmg(d1, d2, x1, y1 float64) (p blas.DrotmParams, rd1, r
 			h12 = 1
 			h11 = p1 / p2
 			h22 = x1 / y1
-			u := 1 + float64(h11*h22)
+			u := 1 + zp.Element(h11*h22)
 			d1, d2 = d2/u, d1/u
 			x1 = y1 * u
 		}
@@ -409,11 +409,11 @@ func (Implementation) Drotmg(d1, d2, x1, y1 float64) (p blas.DrotmParams, rd1, r
 
 	switch p.Flag {
 	case blas.Diagonal:
-		p.H = [4]float64{0: h11, 3: h22}
+		p.H = [4]zp.Element{0: h11, 3: h22}
 	case blas.OffDiagonal:
-		p.H = [4]float64{1: h21, 2: h12}
+		p.H = [4]zp.Element{1: h21, 2: h12}
 	case blas.Rescaling:
-		p.H = [4]float64{h11, h21, h12, h22}
+		p.H = [4]zp.Element{h11, h21, h12, h22}
 	default:
 		panic(badFlag)
 	}
@@ -424,7 +424,7 @@ func (Implementation) Drotmg(d1, d2, x1, y1 float64) (p blas.DrotmParams, rd1, r
 // Drot applies a plane transformation.
 //  x[i] = c * x[i] + s * y[i]
 //  y[i] = c * y[i] - s * x[i]
-func (Implementation) Drot(n int, x []float64, incX int, y []float64, incY int, c float64, s float64) {
+func (Implementation) Drot(n int, x []zp.Element, incX int, y []zp.Element, incY int, c zp.Element, s zp.Element) {
 	if incX == 0 {
 		panic(zeroIncX)
 	}
@@ -468,7 +468,7 @@ func (Implementation) Drot(n int, x []float64, incX int, y []float64, incY int, 
 }
 
 // Drotm applies the modified Givens rotation to the 2×n matrix.
-func (Implementation) Drotm(n int, x []float64, incX int, y []float64, incY int, p blas.DrotmParams) {
+func (Implementation) Drotm(n int, x []zp.Element, incX int, y []zp.Element, incY int, p blas.DrotmParams) {
 	if incX == 0 {
 		panic(zeroIncX)
 	}
@@ -502,7 +502,7 @@ func (Implementation) Drotm(n int, x []float64, incX int, y []float64, incY int,
 			x = x[:n]
 			for i, vx := range x {
 				vy := y[i]
-				x[i], y[i] = float64(vx*h11)+float64(vy*h12), float64(vx*h21)+float64(vy*h22)
+				x[i], y[i] = zp.Element(vx*h11)+zp.Element(vy*h12), zp.Element(vx*h21)+zp.Element(vy*h22)
 			}
 			return
 		}
@@ -516,7 +516,7 @@ func (Implementation) Drotm(n int, x []float64, incX int, y []float64, incY int,
 		for i := 0; i < n; i++ {
 			vx := x[ix]
 			vy := y[iy]
-			x[ix], y[iy] = float64(vx*h11)+float64(vy*h12), float64(vx*h21)+float64(vy*h22)
+			x[ix], y[iy] = zp.Element(vx*h11)+zp.Element(vy*h12), zp.Element(vx*h21)+zp.Element(vy*h22)
 			ix += incX
 			iy += incY
 		}
@@ -527,7 +527,7 @@ func (Implementation) Drotm(n int, x []float64, incX int, y []float64, incY int,
 			x = x[:n]
 			for i, vx := range x {
 				vy := y[i]
-				x[i], y[i] = vx+float64(vy*h12), float64(vx*h21)+vy
+				x[i], y[i] = vx+zp.Element(vy*h12), zp.Element(vx*h21)+vy
 			}
 			return
 		}
@@ -541,7 +541,7 @@ func (Implementation) Drotm(n int, x []float64, incX int, y []float64, incY int,
 		for i := 0; i < n; i++ {
 			vx := x[ix]
 			vy := y[iy]
-			x[ix], y[iy] = vx+float64(vy*h12), float64(vx*h21)+vy
+			x[ix], y[iy] = vx+zp.Element(vy*h12), zp.Element(vx*h21)+vy
 			ix += incX
 			iy += incY
 		}
@@ -552,7 +552,7 @@ func (Implementation) Drotm(n int, x []float64, incX int, y []float64, incY int,
 			x = x[:n]
 			for i, vx := range x {
 				vy := y[i]
-				x[i], y[i] = float64(vx*h11)+vy, -vx+float64(vy*h22)
+				x[i], y[i] = zp.Element(vx*h11)+vy, -vx+zp.Element(vy*h22)
 			}
 			return
 		}
@@ -566,7 +566,7 @@ func (Implementation) Drotm(n int, x []float64, incX int, y []float64, incY int,
 		for i := 0; i < n; i++ {
 			vx := x[ix]
 			vy := y[iy]
-			x[ix], y[iy] = float64(vx*h11)+vy, -vx+float64(vy*h22)
+			x[ix], y[iy] = zp.Element(vx*h11)+vy, -vx+zp.Element(vy*h22)
 			ix += incX
 			iy += incY
 		}
@@ -576,7 +576,7 @@ func (Implementation) Drotm(n int, x []float64, incX int, y []float64, incY int,
 // Dscal scales x by alpha.
 //  x[i] *= alpha
 // Dscal has no effect if incX < 0.
-func (Implementation) Dscal(n int, alpha float64, x []float64, incX int) {
+func (Implementation) Dscal(n int, alpha zp.Element, x []zp.Element, incX int) {
 	if incX < 1 {
 		if incX == 0 {
 			panic(zeroIncX)
@@ -606,8 +606,8 @@ func (Implementation) Dscal(n int, alpha float64, x []float64, incX int) {
 		return
 	}
 	if incX == 1 {
-		f64.ScalUnitary(alpha, x[:n])
+		asm.ScalUnitary(alpha, x[:n])
 		return
 	}
-	f64.ScalInc(alpha, x, uintptr(n), uintptr(incX))
+	asm.ScalInc(alpha, x, uintptr(n), uintptr(incX))
 }
