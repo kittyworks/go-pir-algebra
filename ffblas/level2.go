@@ -6,15 +6,15 @@ package gonum
 
 import (
 	"gonum.org/v1/gonum/blas"
-	"gonum.org/v1/gonum/internal/asm/f64"
+	"gonum.org/v1/gonum/internal/asm"
 )
 
-var _ blas.Float64Level2 = Implementation{}
+var _ blas.zp.ElementLevel2 = Implementation{}
 
 // Dger performs the rank-one operation
 //  A += alpha * x * yᵀ
 // where A is an m×n dense matrix, x and y are vectors, and alpha is a scalar.
-func (Implementation) Dger(m, n int, alpha float64, x []float64, incX int, y []float64, incY int, a []float64, lda int) {
+func (Implementation) Dger(m, n int, alpha zp.Element, x []zp.Element, incX int, y []zp.Element, incY int, a []zp.Element, lda int) {
 	if m < 0 {
 		panic(mLT0)
 	}
@@ -51,7 +51,7 @@ func (Implementation) Dger(m, n int, alpha float64, x []float64, incX int, y []f
 	if alpha == 0 {
 		return
 	}
-	f64.Ger(uintptr(m), uintptr(n),
+	asm.Ger(uintptr(m), uintptr(n),
 		alpha,
 		x, uintptr(incX),
 		y, uintptr(incY),
@@ -63,7 +63,7 @@ func (Implementation) Dger(m, n int, alpha float64, x []float64, incX int, y []f
 //  y = alpha * Aᵀ * x + beta * y  if tA == blas.Trans or blas.ConjTrans
 // where A is an m×n band matrix with kL sub-diagonals and kU super-diagonals,
 // x and y are vectors, and alpha and beta are scalars.
-func (Implementation) Dgbmv(tA blas.Transpose, m, n, kL, kU int, alpha float64, a []float64, lda int, x []float64, incX int, beta float64, y []float64, incY int) {
+func (Implementation) Dgbmv(tA blas.Transpose, m, n, kL, kU int, alpha zp.Element, a []zp.Element, lda int, x []zp.Element, incX int, beta zp.Element, y []zp.Element, incY int) {
 	if tA != blas.NoTrans && tA != blas.Trans && tA != blas.ConjTrans {
 		panic(badTranspose)
 	}
@@ -132,7 +132,7 @@ func (Implementation) Dgbmv(tA blas.Transpose, m, n, kL, kU int, alpha float64, 
 					y[i] = 0
 				}
 			} else {
-				f64.ScalUnitary(beta, y[:lenY])
+				asm.ScalUnitary(beta, y[:lenY])
 			}
 		} else {
 			iy := ky
@@ -143,9 +143,9 @@ func (Implementation) Dgbmv(tA blas.Transpose, m, n, kL, kU int, alpha float64, 
 				}
 			} else {
 				if incY > 0 {
-					f64.ScalInc(beta, y, uintptr(lenY), uintptr(incY))
+					asm.ScalInc(beta, y, uintptr(lenY), uintptr(incY))
 				} else {
-					f64.ScalInc(beta, y, uintptr(lenY), uintptr(-incY))
+					asm.ScalInc(beta, y, uintptr(lenY), uintptr(-incY))
 				}
 			}
 		}
@@ -167,7 +167,7 @@ func (Implementation) Dgbmv(tA blas.Transpose, m, n, kL, kU int, alpha float64, 
 				off := max(0, i-kL)
 				atmp := a[i*lda+l : i*lda+u]
 				xtmp := x[off : off+u-l]
-				var sum float64
+				var sum zp.Element
 				for j, v := range atmp {
 					sum += xtmp[j] * v
 				}
@@ -182,7 +182,7 @@ func (Implementation) Dgbmv(tA blas.Transpose, m, n, kL, kU int, alpha float64, 
 			off := max(0, i-kL)
 			atmp := a[i*lda+l : i*lda+u]
 			jx := kx
-			var sum float64
+			var sum zp.Element
 			for _, v := range atmp {
 				sum += x[off*incX+jx] * v
 				jx += incX
@@ -227,7 +227,7 @@ func (Implementation) Dgbmv(tA blas.Transpose, m, n, kL, kU int, alpha float64, 
 //  y = alpha * A * x + beta * y   if tA = blas.NoTrans
 //  y = alpha * Aᵀ * x + beta * y  if tA = blas.Trans or blas.ConjTrans
 // where A is an m×n dense matrix, x and y are vectors, and alpha and beta are scalars.
-func (Implementation) Dgemv(tA blas.Transpose, m, n int, alpha float64, a []float64, lda int, x []float64, incX int, beta float64, y []float64, incY int) {
+func (Implementation) Dgemv(tA blas.Transpose, m, n int, alpha zp.Element, a []zp.Element, lda int, x []zp.Element, incX int, beta zp.Element, y []zp.Element, incY int) {
 	if tA != blas.NoTrans && tA != blas.Trans && tA != blas.ConjTrans {
 		panic(badTranspose)
 	}
@@ -286,18 +286,18 @@ func (Implementation) Dgemv(tA blas.Transpose, m, n int, alpha float64, a []floa
 
 	// Form y = alpha * A * x + y
 	if tA == blas.NoTrans {
-		f64.GemvN(uintptr(m), uintptr(n), alpha, a, uintptr(lda), x, uintptr(incX), beta, y, uintptr(incY))
+		asm.GemvN(uintptr(m), uintptr(n), alpha, a, uintptr(lda), x, uintptr(incX), beta, y, uintptr(incY))
 		return
 	}
 	// Cases where a is transposed.
-	f64.GemvT(uintptr(m), uintptr(n), alpha, a, uintptr(lda), x, uintptr(incX), beta, y, uintptr(incY))
+	asm.GemvT(uintptr(m), uintptr(n), alpha, a, uintptr(lda), x, uintptr(incX), beta, y, uintptr(incY))
 }
 
 // Dtrmv performs one of the matrix-vector operations
 //  x = A * x   if tA == blas.NoTrans
 //  x = Aᵀ * x  if tA == blas.Trans or blas.ConjTrans
 // where A is an n×n triangular matrix, and x is a vector.
-func (Implementation) Dtrmv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n int, a []float64, lda int, x []float64, incX int) {
+func (Implementation) Dtrmv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n int, a []zp.Element, lda int, x []zp.Element, incX int) {
 	if ul != blas.Lower && ul != blas.Upper {
 		panic(badUplo)
 	}
@@ -346,26 +346,26 @@ func (Implementation) Dtrmv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n int,
 			if incX == 1 {
 				for i := 0; i < n; i++ {
 					ilda := i * lda
-					var tmp float64
+					var tmp zp.Element
 					if nonUnit {
 						tmp = a[ilda+i] * x[i]
 					} else {
 						tmp = x[i]
 					}
-					x[i] = tmp + f64.DotUnitary(a[ilda+i+1:ilda+n], x[i+1:n])
+					x[i] = tmp + asm.DotUnitary(a[ilda+i+1:ilda+n], x[i+1:n])
 				}
 				return
 			}
 			ix := kx
 			for i := 0; i < n; i++ {
 				ilda := i * lda
-				var tmp float64
+				var tmp zp.Element
 				if nonUnit {
 					tmp = a[ilda+i] * x[ix]
 				} else {
 					tmp = x[ix]
 				}
-				x[ix] = tmp + f64.DotInc(x, a[ilda+i+1:ilda+n], uintptr(n-i-1), uintptr(incX), 1, uintptr(ix+incX), 0)
+				x[ix] = tmp + asm.DotInc(x, a[ilda+i+1:ilda+n], uintptr(n-i-1), uintptr(incX), 1, uintptr(ix+incX), 0)
 				ix += incX
 			}
 			return
@@ -373,26 +373,26 @@ func (Implementation) Dtrmv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n int,
 		if incX == 1 {
 			for i := n - 1; i >= 0; i-- {
 				ilda := i * lda
-				var tmp float64
+				var tmp zp.Element
 				if nonUnit {
 					tmp += a[ilda+i] * x[i]
 				} else {
 					tmp = x[i]
 				}
-				x[i] = tmp + f64.DotUnitary(a[ilda:ilda+i], x[:i])
+				x[i] = tmp + asm.DotUnitary(a[ilda:ilda+i], x[:i])
 			}
 			return
 		}
 		ix := kx + (n-1)*incX
 		for i := n - 1; i >= 0; i-- {
 			ilda := i * lda
-			var tmp float64
+			var tmp zp.Element
 			if nonUnit {
 				tmp = a[ilda+i] * x[ix]
 			} else {
 				tmp = x[ix]
 			}
-			x[ix] = tmp + f64.DotInc(x, a[ilda:ilda+i], uintptr(i), uintptr(incX), 1, uintptr(kx), 0)
+			x[ix] = tmp + asm.DotInc(x, a[ilda:ilda+i], uintptr(i), uintptr(incX), 1, uintptr(kx), 0)
 			ix -= incX
 		}
 		return
@@ -403,7 +403,7 @@ func (Implementation) Dtrmv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n int,
 			for i := n - 1; i >= 0; i-- {
 				ilda := i * lda
 				xi := x[i]
-				f64.AxpyUnitary(xi, a[ilda+i+1:ilda+n], x[i+1:n])
+				asm.AxpyUnitary(xi, a[ilda+i+1:ilda+n], x[i+1:n])
 				if nonUnit {
 					x[i] *= a[ilda+i]
 				}
@@ -414,7 +414,7 @@ func (Implementation) Dtrmv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n int,
 		for i := n - 1; i >= 0; i-- {
 			ilda := i * lda
 			xi := x[ix]
-			f64.AxpyInc(xi, a[ilda+i+1:ilda+n], x, uintptr(n-i-1), 1, uintptr(incX), 0, uintptr(kx+(i+1)*incX))
+			asm.AxpyInc(xi, a[ilda+i+1:ilda+n], x, uintptr(n-i-1), 1, uintptr(incX), 0, uintptr(kx+(i+1)*incX))
 			if nonUnit {
 				x[ix] *= a[ilda+i]
 			}
@@ -426,7 +426,7 @@ func (Implementation) Dtrmv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n int,
 		for i := 0; i < n; i++ {
 			ilda := i * lda
 			xi := x[i]
-			f64.AxpyUnitary(xi, a[ilda:ilda+i], x[:i])
+			asm.AxpyUnitary(xi, a[ilda:ilda+i], x[:i])
 			if nonUnit {
 				x[i] *= a[i*lda+i]
 			}
@@ -437,7 +437,7 @@ func (Implementation) Dtrmv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n int,
 	for i := 0; i < n; i++ {
 		ilda := i * lda
 		xi := x[ix]
-		f64.AxpyInc(xi, a[ilda:ilda+i], x, uintptr(i), 1, uintptr(incX), 0, uintptr(kx))
+		asm.AxpyInc(xi, a[ilda:ilda+i], x, uintptr(i), 1, uintptr(incX), 0, uintptr(kx))
 		if nonUnit {
 			x[ix] *= a[ilda+i]
 		}
@@ -455,7 +455,7 @@ func (Implementation) Dtrmv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n int,
 //
 // No test for singularity or near-singularity is included in this
 // routine. Such tests must be performed before calling this routine.
-func (Implementation) Dtrsv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n int, a []float64, lda int, x []float64, incX int) {
+func (Implementation) Dtrsv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n int, a []zp.Element, lda int, x []zp.Element, incX int) {
 	if ul != blas.Lower && ul != blas.Upper {
 		panic(badUplo)
 	}
@@ -504,7 +504,7 @@ func (Implementation) Dtrsv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n int,
 		if ul == blas.Upper {
 			if incX == 1 {
 				for i := n - 1; i >= 0; i-- {
-					var sum float64
+					var sum zp.Element
 					atmp := a[i*lda+i+1 : i*lda+n]
 					for j, v := range atmp {
 						jv := i + j + 1
@@ -519,7 +519,7 @@ func (Implementation) Dtrsv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n int,
 			}
 			ix := kx + (n-1)*incX
 			for i := n - 1; i >= 0; i-- {
-				var sum float64
+				var sum zp.Element
 				jx := ix + incX
 				atmp := a[i*lda+i+1 : i*lda+n]
 				for _, v := range atmp {
@@ -536,7 +536,7 @@ func (Implementation) Dtrsv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n int,
 		}
 		if incX == 1 {
 			for i := 0; i < n; i++ {
-				var sum float64
+				var sum zp.Element
 				atmp := a[i*lda : i*lda+i]
 				for j, v := range atmp {
 					sum += x[j] * v
@@ -551,7 +551,7 @@ func (Implementation) Dtrsv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n int,
 		ix := kx
 		for i := 0; i < n; i++ {
 			jx := kx
-			var sum float64
+			var sum zp.Element
 			atmp := a[i*lda : i*lda+i]
 			for _, v := range atmp {
 				sum += x[jx] * v
@@ -630,7 +630,7 @@ func (Implementation) Dtrsv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n int,
 //  y = alpha * A * x + beta * y
 // where A is an n×n symmetric matrix, x and y are vectors, and alpha and
 // beta are scalars.
-func (Implementation) Dsymv(ul blas.Uplo, n int, alpha float64, a []float64, lda int, x []float64, incX int, beta float64, y []float64, incY int) {
+func (Implementation) Dsymv(ul blas.Uplo, n int, alpha zp.Element, a []zp.Element, lda int, x []zp.Element, incX int, beta zp.Element, y []zp.Element, incY int) {
 	if ul != blas.Lower && ul != blas.Upper {
 		panic(badUplo)
 	}
@@ -685,7 +685,7 @@ func (Implementation) Dsymv(ul blas.Uplo, n int, alpha float64, a []float64, lda
 					y[i] = 0
 				}
 			} else {
-				f64.ScalUnitary(beta, y[:n])
+				asm.ScalUnitary(beta, y[:n])
 			}
 		} else {
 			iy := ky
@@ -696,9 +696,9 @@ func (Implementation) Dsymv(ul blas.Uplo, n int, alpha float64, a []float64, lda
 				}
 			} else {
 				if incY > 0 {
-					f64.ScalInc(beta, y, uintptr(n), uintptr(incY))
+					asm.ScalInc(beta, y, uintptr(n), uintptr(incY))
 				} else {
-					f64.ScalInc(beta, y, uintptr(n), uintptr(-incY))
+					asm.ScalInc(beta, y, uintptr(n), uintptr(-incY))
 				}
 			}
 		}
@@ -759,7 +759,7 @@ func (Implementation) Dsymv(ul blas.Uplo, n int, alpha float64, a []float64, lda
 			jy := ky
 			xv := alpha * x[i]
 			atmp := a[i*lda : i*lda+i]
-			var sum float64
+			var sum zp.Element
 			for j, v := range atmp {
 				sum += x[j] * v
 				y[jy] += xv * v
@@ -779,7 +779,7 @@ func (Implementation) Dsymv(ul blas.Uplo, n int, alpha float64, a []float64, lda
 		jy := ky
 		xv := alpha * x[ix]
 		atmp := a[i*lda : i*lda+i]
-		var sum float64
+		var sum zp.Element
 		for _, v := range atmp {
 			sum += x[jx] * v
 			y[jy] += xv * v
@@ -798,7 +798,7 @@ func (Implementation) Dsymv(ul blas.Uplo, n int, alpha float64, a []float64, lda
 //  x = A * x   if tA == blas.NoTrans
 //  x = Aᵀ * x  if tA == blas.Trans or blas.ConjTrans
 // where A is an n×n triangular band matrix with k+1 diagonals, and x is a vector.
-func (Implementation) Dtbmv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n, k int, a []float64, lda int, x []float64, incX int) {
+func (Implementation) Dtbmv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n, k int, a []zp.Element, lda int, x []zp.Element, incX int) {
 	if ul != blas.Lower && ul != blas.Upper {
 		panic(badUplo)
 	}
@@ -846,7 +846,7 @@ func (Implementation) Dtbmv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n, k i
 			if incX == 1 {
 				for i := 0; i < n; i++ {
 					u := min(1+k, n-i)
-					var sum float64
+					var sum zp.Element
 					atmp := a[i*lda:]
 					xtmp := x[i:]
 					for j := 1; j < u; j++ {
@@ -864,7 +864,7 @@ func (Implementation) Dtbmv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n, k i
 			ix := kx
 			for i := 0; i < n; i++ {
 				u := min(1+k, n-i)
-				var sum float64
+				var sum zp.Element
 				atmp := a[i*lda:]
 				jx := incX
 				for j := 1; j < u; j++ {
@@ -885,7 +885,7 @@ func (Implementation) Dtbmv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n, k i
 			for i := n - 1; i >= 0; i-- {
 				l := max(0, k-i)
 				atmp := a[i*lda:]
-				var sum float64
+				var sum zp.Element
 				for j := l; j < k; j++ {
 					sum += x[i-k+j] * atmp[j]
 				}
@@ -902,7 +902,7 @@ func (Implementation) Dtbmv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n, k i
 		for i := n - 1; i >= 0; i-- {
 			l := max(0, k-i)
 			atmp := a[i*lda:]
-			var sum float64
+			var sum zp.Element
 			jx := l * incX
 			for j := l; j < k; j++ {
 				sum += x[ix-k*incX+jx] * atmp[j]
@@ -925,7 +925,7 @@ func (Implementation) Dtbmv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n, k i
 				if i < u {
 					u = i + 1
 				}
-				var sum float64
+				var sum zp.Element
 				for j := 1; j < u; j++ {
 					sum += x[i-j] * a[(i-j)*lda+j]
 				}
@@ -944,7 +944,7 @@ func (Implementation) Dtbmv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n, k i
 			if i < u {
 				u = i + 1
 			}
-			var sum float64
+			var sum zp.Element
 			jx := incX
 			for j := 1; j < u; j++ {
 				sum += x[ix-jx] * a[(i-j)*lda+j]
@@ -966,7 +966,7 @@ func (Implementation) Dtbmv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n, k i
 			if i+k >= n {
 				u = n - i - 1
 			}
-			var sum float64
+			var sum zp.Element
 			for j := 0; j < u; j++ {
 				sum += x[i+j+1] * a[(i+j+1)*lda+k-j-1]
 			}
@@ -986,7 +986,7 @@ func (Implementation) Dtbmv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n, k i
 			u = n - i - 1
 		}
 		var (
-			sum float64
+			sum zp.Element
 			jx  int
 		)
 		for j := 0; j < u; j++ {
@@ -1007,7 +1007,7 @@ func (Implementation) Dtbmv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n, k i
 //  x = A * x   if tA == blas.NoTrans
 //  x = Aᵀ * x  if tA == blas.Trans or blas.ConjTrans
 // where A is an n×n triangular matrix in packed format, and x is a vector.
-func (Implementation) Dtpmv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n int, ap []float64, x []float64, incX int) {
+func (Implementation) Dtpmv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n int, ap []zp.Element, x []zp.Element, incX int) {
 	if ul != blas.Lower && ul != blas.Upper {
 		panic(badUplo)
 	}
@@ -1193,7 +1193,7 @@ func (Implementation) Dtpmv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n int,
 //
 // No test for singularity or near-singularity is included in this
 // routine. Such tests must be performed before calling this routine.
-func (Implementation) Dtbsv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n, k int, a []float64, lda int, x []float64, incX int) {
+func (Implementation) Dtbsv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n, k int, a []zp.Element, lda int, x []zp.Element, incX int) {
 	if ul != blas.Lower && ul != blas.Upper {
 		panic(badUplo)
 	}
@@ -1247,7 +1247,7 @@ func (Implementation) Dtbsv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n, k i
 					}
 					atmp := a[i*lda+1:]
 					xtmp := x[i+1 : i+bands+1]
-					var sum float64
+					var sum zp.Element
 					for j, v := range xtmp {
 						sum += v * atmp[j]
 					}
@@ -1267,7 +1267,7 @@ func (Implementation) Dtbsv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n, k i
 				atmp := a[i*lda:]
 				var (
 					jx  int
-					sum float64
+					sum zp.Element
 				)
 				for j := 1; j < max; j++ {
 					jx += incX
@@ -1289,7 +1289,7 @@ func (Implementation) Dtbsv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n, k i
 				}
 				atmp := a[i*lda+k-bands:]
 				xtmp := x[i-bands : i]
-				var sum float64
+				var sum zp.Element
 				for j, v := range xtmp {
 					sum += v * atmp[j]
 				}
@@ -1308,7 +1308,7 @@ func (Implementation) Dtbsv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n, k i
 			}
 			atmp := a[i*lda+k-bands:]
 			var (
-				sum float64
+				sum zp.Element
 				jx  int
 			)
 			for j := 0; j < bands; j++ {
@@ -1331,7 +1331,7 @@ func (Implementation) Dtbsv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n, k i
 				if i-k < 0 {
 					bands = i
 				}
-				var sum float64
+				var sum zp.Element
 				for j := 0; j < bands; j++ {
 					sum += x[i-bands+j] * a[(i-bands+j)*lda+bands-j]
 				}
@@ -1349,7 +1349,7 @@ func (Implementation) Dtbsv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n, k i
 				bands = i
 			}
 			var (
-				sum float64
+				sum zp.Element
 				jx  int
 			)
 			for j := 0; j < bands; j++ {
@@ -1370,7 +1370,7 @@ func (Implementation) Dtbsv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n, k i
 			if i+bands >= n {
 				bands = n - i - 1
 			}
-			var sum float64
+			var sum zp.Element
 			xtmp := x[i+1 : i+1+bands]
 			for j, v := range xtmp {
 				sum += v * a[(i+j+1)*lda+k-j-1]
@@ -1389,7 +1389,7 @@ func (Implementation) Dtbsv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n, k i
 			bands = n - i - 1
 		}
 		var (
-			sum float64
+			sum zp.Element
 			jx  int
 		)
 		for j := 0; j < bands; j++ {
@@ -1408,7 +1408,7 @@ func (Implementation) Dtbsv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n, k i
 //  y = alpha * A * x + beta * y
 // where A is an n×n symmetric band matrix with k super-diagonals, x and y are
 // vectors, and alpha and beta are scalars.
-func (Implementation) Dsbmv(ul blas.Uplo, n, k int, alpha float64, a []float64, lda int, x []float64, incX int, beta float64, y []float64, incY int) {
+func (Implementation) Dsbmv(ul blas.Uplo, n, k int, alpha zp.Element, a []zp.Element, lda int, x []zp.Element, incX int, beta zp.Element, y []zp.Element, incY int) {
 	if ul != blas.Lower && ul != blas.Upper {
 		panic(badUplo)
 	}
@@ -1468,7 +1468,7 @@ func (Implementation) Dsbmv(ul blas.Uplo, n, k int, alpha float64, a []float64, 
 					y[i] = 0
 				}
 			} else {
-				f64.ScalUnitary(beta, y[:n])
+				asm.ScalUnitary(beta, y[:n])
 			}
 		} else {
 			iy := ky
@@ -1479,9 +1479,9 @@ func (Implementation) Dsbmv(ul blas.Uplo, n, k int, alpha float64, a []float64, 
 				}
 			} else {
 				if incY > 0 {
-					f64.ScalInc(beta, y, uintptr(n), uintptr(incY))
+					asm.ScalInc(beta, y, uintptr(n), uintptr(incY))
 				} else {
-					f64.ScalInc(beta, y, uintptr(n), uintptr(-incY))
+					asm.ScalInc(beta, y, uintptr(n), uintptr(-incY))
 				}
 			}
 		}
@@ -1577,7 +1577,7 @@ func (Implementation) Dsbmv(ul blas.Uplo, n, k int, alpha float64, a []float64, 
 // Dsyr performs the symmetric rank-one update
 //  A += alpha * x * xᵀ
 // where A is an n×n symmetric matrix, and x is a vector.
-func (Implementation) Dsyr(ul blas.Uplo, n int, alpha float64, x []float64, incX int, a []float64, lda int) {
+func (Implementation) Dsyr(ul blas.Uplo, n int, alpha zp.Element, x []zp.Element, incX int, a []zp.Element, lda int) {
 	if ul != blas.Lower && ul != blas.Upper {
 		panic(badUplo)
 	}
@@ -1675,7 +1675,7 @@ func (Implementation) Dsyr(ul blas.Uplo, n int, alpha float64, x []float64, incX
 // Dsyr2 performs the symmetric rank-two update
 //  A += alpha * x * yᵀ + alpha * y * xᵀ
 // where A is an n×n symmetric matrix, x and y are vectors, and alpha is a scalar.
-func (Implementation) Dsyr2(ul blas.Uplo, n int, alpha float64, x []float64, incX int, y []float64, incY int, a []float64, lda int) {
+func (Implementation) Dsyr2(ul blas.Uplo, n int, alpha zp.Element, x []zp.Element, incX int, y []zp.Element, incY int, a []zp.Element, lda int) {
 	if ul != blas.Lower && ul != blas.Upper {
 		panic(badUplo)
 	}
@@ -1789,7 +1789,7 @@ func (Implementation) Dsyr2(ul blas.Uplo, n int, alpha float64, x []float64, inc
 //
 // No test for singularity or near-singularity is included in this
 // routine. Such tests must be performed before calling this routine.
-func (Implementation) Dtpsv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n int, ap []float64, x []float64, incX int) {
+func (Implementation) Dtpsv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n int, ap []zp.Element, x []zp.Element, incX int) {
 	if ul != blas.Lower && ul != blas.Upper {
 		panic(badUplo)
 	}
@@ -1833,7 +1833,7 @@ func (Implementation) Dtpsv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n int,
 				for i := n - 1; i >= 0; i-- {
 					atmp := ap[offset+1 : offset+n-i]
 					xtmp := x[i+1:]
-					var sum float64
+					var sum zp.Element
 					for j, v := range atmp {
 						sum += v * xtmp[j]
 					}
@@ -1849,7 +1849,7 @@ func (Implementation) Dtpsv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n int,
 			for i := n - 1; i >= 0; i-- {
 				atmp := ap[offset+1 : offset+n-i]
 				jx := kx + (i+1)*incX
-				var sum float64
+				var sum zp.Element
 				for _, v := range atmp {
 					sum += v * x[jx]
 					jx += incX
@@ -1866,7 +1866,7 @@ func (Implementation) Dtpsv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n int,
 		if incX == 1 {
 			for i := 0; i < n; i++ {
 				atmp := ap[offset-i : offset]
-				var sum float64
+				var sum zp.Element
 				for j, v := range atmp {
 					sum += v * x[j]
 				}
@@ -1882,7 +1882,7 @@ func (Implementation) Dtpsv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n int,
 		for i := 0; i < n; i++ {
 			jx := kx
 			atmp := ap[offset-i : offset]
-			var sum float64
+			var sum zp.Element
 			for _, v := range atmp {
 				sum += v * x[jx]
 				jx += incX
@@ -1967,7 +1967,7 @@ func (Implementation) Dtpsv(ul blas.Uplo, tA blas.Transpose, d blas.Diag, n int,
 //  y = alpha * A * x + beta * y
 // where A is an n×n symmetric matrix in packed format, x and y are vectors,
 // and alpha and beta are scalars.
-func (Implementation) Dspmv(ul blas.Uplo, n int, alpha float64, ap []float64, x []float64, incX int, beta float64, y []float64, incY int) {
+func (Implementation) Dspmv(ul blas.Uplo, n int, alpha zp.Element, ap []zp.Element, x []zp.Element, incX int, beta zp.Element, y []zp.Element, incY int) {
 	if ul != blas.Lower && ul != blas.Upper {
 		panic(badUplo)
 	}
@@ -2019,7 +2019,7 @@ func (Implementation) Dspmv(ul blas.Uplo, n int, alpha float64, ap []float64, x 
 					y[i] = 0
 				}
 			} else {
-				f64.ScalUnitary(beta, y[:n])
+				asm.ScalUnitary(beta, y[:n])
 			}
 		} else {
 			iy := ky
@@ -2030,9 +2030,9 @@ func (Implementation) Dspmv(ul blas.Uplo, n int, alpha float64, ap []float64, x 
 				}
 			} else {
 				if incY > 0 {
-					f64.ScalInc(beta, y, uintptr(n), uintptr(incY))
+					asm.ScalInc(beta, y, uintptr(n), uintptr(incY))
 				} else {
-					f64.ScalInc(beta, y, uintptr(n), uintptr(-incY))
+					asm.ScalInc(beta, y, uintptr(n), uintptr(-incY))
 				}
 			}
 		}
@@ -2094,7 +2094,7 @@ func (Implementation) Dspmv(ul blas.Uplo, n int, alpha float64, ap []float64, x 
 			xv := x[i] * alpha
 			atmp := ap[offset-i : offset]
 			jy := ky
-			var sum float64
+			var sum zp.Element
 			for j, v := range atmp {
 				sum += v * x[j]
 				y[jy] += v * xv
@@ -2114,7 +2114,7 @@ func (Implementation) Dspmv(ul blas.Uplo, n int, alpha float64, ap []float64, x 
 		atmp := ap[offset-i : offset]
 		jx := kx
 		jy := ky
-		var sum float64
+		var sum zp.Element
 		for _, v := range atmp {
 			sum += v * x[jx]
 			y[jy] += v * xv
@@ -2134,7 +2134,7 @@ func (Implementation) Dspmv(ul blas.Uplo, n int, alpha float64, ap []float64, x 
 //  A += alpha * x * xᵀ
 // where A is an n×n symmetric matrix in packed format, x is a vector, and
 // alpha is a scalar.
-func (Implementation) Dspr(ul blas.Uplo, n int, alpha float64, x []float64, incX int, ap []float64) {
+func (Implementation) Dspr(ul blas.Uplo, n int, alpha zp.Element, x []zp.Element, incX int, ap []zp.Element) {
 	if ul != blas.Lower && ul != blas.Upper {
 		panic(badUplo)
 	}
@@ -2226,7 +2226,7 @@ func (Implementation) Dspr(ul blas.Uplo, n int, alpha float64, x []float64, incX
 //  A += alpha * x * yᵀ + alpha * y * xᵀ
 // where A is an n×n symmetric matrix in packed format, x and y are vectors,
 // and alpha is a scalar.
-func (Implementation) Dspr2(ul blas.Uplo, n int, alpha float64, x []float64, incX int, y []float64, incY int, ap []float64) {
+func (Implementation) Dspr2(ul blas.Uplo, n int, alpha zp.Element, x []zp.Element, incX int, y []zp.Element, incY int, ap []zp.Element) {
 	if ul != blas.Lower && ul != blas.Upper {
 		panic(badUplo)
 	}
