@@ -12,16 +12,16 @@ import (
 
 var ffblas blas.FF = gonum.Implementation{}
 
-// Use sets the BLAS zp.Element implementation to be used by subsequent BLAS calls.
+// Use sets the BLAS Element implementation to be used by subsequent BLAS calls.
 // The default implementation is
 // gonum.org/v1/gonum/blas/gonum.Implementation.
 func Use(b blas.FF) {
 	ffblas = b
 }
 
-// Implementation returns the current BLAS zp.Element implementation.
+// Implementation returns the current BLAS Element implementation.
 //
-// Implementation allows direct calls to the current the BLAS zp.Element implementation
+// Implementation allows direct calls to the current the BLAS Element implementation
 // giving finer control of parameters.
 func Implementation() blas.FF {
 	return ffblas
@@ -31,14 +31,14 @@ func Implementation() blas.FF {
 type Vector struct {
 	N    int
 	Inc  int
-	Data []zp.Element
+	Data []Element
 }
 
 // General represents a matrix using the conventional storage scheme.
 type General struct {
 	Rows, Cols int
 	Stride     int
-	Data       []zp.Element
+	Data       []Element
 }
 
 // Band represents a band matrix using the band storage scheme.
@@ -46,14 +46,14 @@ type Band struct {
 	Rows, Cols int
 	KL, KU     int
 	Stride     int
-	Data       []zp.Element
+	Data       []Element
 }
 
 // Triangular represents a triangular matrix using the conventional storage scheme.
 type Triangular struct {
 	N      int
 	Stride int
-	Data   []zp.Element
+	Data   []Element
 	Uplo   blas.Uplo
 	Diag   blas.Diag
 }
@@ -62,7 +62,7 @@ type Triangular struct {
 type TriangularBand struct {
 	N, K   int
 	Stride int
-	Data   []zp.Element
+	Data   []Element
 	Uplo   blas.Uplo
 	Diag   blas.Diag
 }
@@ -70,7 +70,7 @@ type TriangularBand struct {
 // TriangularPacked represents a triangular matrix using the packed storage scheme.
 type TriangularPacked struct {
 	N    int
-	Data []zp.Element
+	Data []Element
 	Uplo blas.Uplo
 	Diag blas.Diag
 }
@@ -79,7 +79,7 @@ type TriangularPacked struct {
 type Symmetric struct {
 	N      int
 	Stride int
-	Data   []zp.Element
+	Data   []Element
 	Uplo   blas.Uplo
 }
 
@@ -87,14 +87,14 @@ type Symmetric struct {
 type SymmetricBand struct {
 	N, K   int
 	Stride int
-	Data   []zp.Element
+	Data   []Element
 	Uplo   blas.Uplo
 }
 
 // SymmetricPacked represents a symmetric matrix using the packed storage scheme.
 type SymmetricPacked struct {
 	N    int
-	Data []zp.Element
+	Data []Element
 	Uplo blas.Uplo
 }
 
@@ -108,7 +108,7 @@ const (
 // Dot computes the dot product of the two vectors:
 //  \sum_i x[i]*y[i].
 // Dot will panic if the lengths of x and y do not match.
-func Dot(x, y Vector) zp.Element {
+func Dot(x, y Vector) Element {
 	if x.N != y.N {
 		panic(badLength)
 	}
@@ -128,7 +128,7 @@ func DDot(x, y Vector) float64 {
 // SDDot computes the dot product of the two vectors adding a constant:
 //  alpha + \sum_i x[i]*y[i].
 // SDDot will panic if the lengths of x and y do not match.
-func SDDot(alpha zp.Element, x, y Vector) zp.Element {
+func SDDot(alpha Element, x, y Vector) Element {
 	if x.N != y.N {
 		panic(badLength)
 	}
@@ -139,7 +139,7 @@ func SDDot(alpha zp.Element, x, y Vector) zp.Element {
 //  sqrt(\sum_i x[i]*x[i]).
 //
 // Nrm2 will panic if the vector increment is negative.
-func Nrm2(x Vector) zp.Element {
+func Nrm2(x Vector) Element {
 	if x.Inc < 0 {
 		panic(negInc)
 	}
@@ -150,7 +150,7 @@ func Nrm2(x Vector) zp.Element {
 //  \sum_i |x[i]|.
 //
 // Asum will panic if the vector increment is negative.
-func Asum(x Vector) zp.Element {
+func Asum(x Vector) Element {
 	if x.Inc < 0 {
 		panic(negInc)
 	}
@@ -192,7 +192,7 @@ func Copy(x, y Vector) {
 // Axpy adds x scaled by alpha to y:
 //  y[i] += alpha*x[i] for all i.
 // Axpy will panic if the lengths of x and y do not match.
-func Axpy(alpha zp.Element, x, y Vector) {
+func Axpy(alpha Element, x, y Vector) {
 	if x.N != y.N {
 		panic(badLength)
 	}
@@ -211,14 +211,14 @@ func Axpy(alpha zp.Element, x, y Vector) {
 //  if |a| > |b|,        z = s,
 //  otherwise if c != 0, z = 1/c,
 //  otherwise            z = 1.
-func Rotg(a, b zp.Element) (c, s, r, z zp.Element) {
+func Rotg(a, b Element) (c, s, r, z Element) {
 	return ffblas.Srotg(a, b)
 }
 
 // Rotmg computes the modified Givens rotation. See
 // http://www.netlib.org/lapack/explore-html/df/deb/drotmg_8f.html
 // for more details.
-func Rotmg(d1, d2, b1, b2 zp.Element) (p blas.SrotmParams, rd1, rd2, rb1 zp.Element) {
+func Rotmg(d1, d2, b1, b2 Element) (p blas.SrotmParams, rd1, rd2, rb1 Element) {
 	return ffblas.Srotmg(d1, d2, b1, b2)
 }
 
@@ -226,7 +226,7 @@ func Rotmg(d1, d2, b1, b2 zp.Element) (p blas.SrotmParams, rd1, rd2, rb1 zp.Elem
 // and y:
 //  x[i] =  c*x[i] + s*y[i],
 //  y[i] = -s*x[i] + c*y[i], for all i.
-func Rot(n int, x, y Vector, c, s zp.Element) {
+func Rot(n int, x, y Vector, c, s Element) {
 	ffblas.Srot(n, x.Data, x.Inc, y.Data, y.Inc, c, s)
 }
 
@@ -240,7 +240,7 @@ func Rotm(n int, x, y Vector, p blas.SrotmParams) {
 //  x[i] *= alpha for all i.
 //
 // Scal will panic if the vector increment is negative.
-func Scal(alpha zp.Element, x Vector) {
+func Scal(alpha Element, x Vector) {
 	if x.Inc < 0 {
 		panic(negInc)
 	}
@@ -253,7 +253,7 @@ func Scal(alpha zp.Element, x Vector) {
 //  y = alpha * A * x + beta * y   if t == blas.NoTrans,
 //  y = alpha * Aᵀ * x + beta * y  if t == blas.Trans or blas.ConjTrans,
 // where A is an m×n dense matrix, x and y are vectors, and alpha and beta are scalars.
-func Gemv(t blas.Transpose, alpha zp.Element, a General, x Vector, beta zp.Element, y Vector) {
+func Gemv(t blas.Transpose, alpha Element, a General, x Vector, beta Element, y Vector) {
 	ffblas.Sgemv(t, a.Rows, a.Cols, alpha, a.Data, a.Stride, x.Data, x.Inc, beta, y.Data, y.Inc)
 }
 
@@ -261,7 +261,7 @@ func Gemv(t blas.Transpose, alpha zp.Element, a General, x Vector, beta zp.Eleme
 //  y = alpha * A * x + beta * y   if t == blas.NoTrans,
 //  y = alpha * Aᵀ * x + beta * y  if t == blas.Trans or blas.ConjTrans,
 // where A is an m×n band matrix, x and y are vectors, and alpha and beta are scalars.
-func Gbmv(t blas.Transpose, alpha zp.Element, a Band, x Vector, beta zp.Element, y Vector) {
+func Gbmv(t blas.Transpose, alpha Element, a Band, x Vector, beta Element, y Vector) {
 	ffblas.Sgbmv(t, a.Rows, a.Cols, a.KL, a.KU, alpha, a.Data, a.Stride, x.Data, x.Inc, beta, y.Data, y.Inc)
 }
 
@@ -336,7 +336,7 @@ func Tpsv(t blas.Transpose, a TriangularPacked, x Vector) {
 //  y = alpha * A * x + beta * y,
 // where A is an n×n symmetric matrix, x and y are vectors, and alpha and
 // beta are scalars.
-func Symv(alpha zp.Element, a Symmetric, x Vector, beta zp.Element, y Vector) {
+func Symv(alpha Element, a Symmetric, x Vector, beta Element, y Vector) {
 	ffblas.Ssymv(a.Uplo, a.N, alpha, a.Data, a.Stride, x.Data, x.Inc, beta, y.Data, y.Inc)
 }
 
@@ -344,7 +344,7 @@ func Symv(alpha zp.Element, a Symmetric, x Vector, beta zp.Element, y Vector) {
 //  y = alpha * A * x + beta * y,
 // where A is an n×n symmetric band matrix, x and y are vectors, and alpha
 // and beta are scalars.
-func Sbmv(alpha zp.Element, a SymmetricBand, x Vector, beta zp.Element, y Vector) {
+func Sbmv(alpha Element, a SymmetricBand, x Vector, beta Element, y Vector) {
 	ffblas.Ssbmv(a.Uplo, a.N, a.K, alpha, a.Data, a.Stride, x.Data, x.Inc, beta, y.Data, y.Inc)
 }
 
@@ -352,21 +352,21 @@ func Sbmv(alpha zp.Element, a SymmetricBand, x Vector, beta zp.Element, y Vector
 //  y = alpha * A * x + beta * y,
 // where A is an n×n symmetric matrix in packed format, x and y are vectors,
 // and alpha and beta are scalars.
-func Spmv(alpha zp.Element, a SymmetricPacked, x Vector, beta zp.Element, y Vector) {
+func Spmv(alpha Element, a SymmetricPacked, x Vector, beta Element, y Vector) {
 	ffblas.Sspmv(a.Uplo, a.N, alpha, a.Data, x.Data, x.Inc, beta, y.Data, y.Inc)
 }
 
 // Ger performs a rank-1 update
 //  A += alpha * x * yᵀ,
 // where A is an m×n dense matrix, x and y are vectors, and alpha is a scalar.
-func Ger(alpha zp.Element, x, y Vector, a General) {
+func Ger(alpha Element, x, y Vector, a General) {
 	ffblas.Sger(a.Rows, a.Cols, alpha, x.Data, x.Inc, y.Data, y.Inc, a.Data, a.Stride)
 }
 
 // Syr performs a rank-1 update
 //  A += alpha * x * xᵀ,
 // where A is an n×n symmetric matrix, x is a vector, and alpha is a scalar.
-func Syr(alpha zp.Element, x Vector, a Symmetric) {
+func Syr(alpha Element, x Vector, a Symmetric) {
 	ffblas.Ssyr(a.Uplo, a.N, alpha, x.Data, x.Inc, a.Data, a.Stride)
 }
 
@@ -374,14 +374,14 @@ func Syr(alpha zp.Element, x Vector, a Symmetric) {
 //  A += alpha * x * xᵀ,
 // where A is an n×n symmetric matrix in packed format, x is a vector, and
 // alpha is a scalar.
-func Spr(alpha zp.Element, x Vector, a SymmetricPacked) {
+func Spr(alpha Element, x Vector, a SymmetricPacked) {
 	ffblas.Sspr(a.Uplo, a.N, alpha, x.Data, x.Inc, a.Data)
 }
 
 // Syr2 performs a rank-2 update
 //  A += alpha * x * yᵀ + alpha * y * xᵀ,
 // where A is a symmetric n×n matrix, x and y are vectors, and alpha is a scalar.
-func Syr2(alpha zp.Element, x, y Vector, a Symmetric) {
+func Syr2(alpha Element, x, y Vector, a Symmetric) {
 	ffblas.Ssyr2(a.Uplo, a.N, alpha, x.Data, x.Inc, y.Data, y.Inc, a.Data, a.Stride)
 }
 
@@ -389,7 +389,7 @@ func Syr2(alpha zp.Element, x, y Vector, a Symmetric) {
 //  A += alpha * x * yᵀ + alpha * y * xᵀ,
 // where A is an n×n symmetric matrix in packed format, x and y are vectors,
 // and alpha is a scalar.
-func Spr2(alpha zp.Element, x, y Vector, a SymmetricPacked) {
+func Spr2(alpha Element, x, y Vector, a SymmetricPacked) {
 	ffblas.Sspr2(a.Uplo, a.N, alpha, x.Data, x.Inc, y.Data, y.Inc, a.Data)
 }
 
@@ -399,7 +399,7 @@ func Spr2(alpha zp.Element, x, y Vector, a SymmetricPacked) {
 //  C = alpha * A * B + beta * C,
 // where A, B, and C are dense matrices, and alpha and beta are scalars.
 // tA and tB specify whether A or B are transposed.
-func Gemm(tA, tB blas.Transpose, alpha zp.Element, a, b General, beta zp.Element, c General) {
+func Gemm(tA, tB blas.Transpose, alpha Element, a, b General, beta Element, c General) {
 	var m, n, k int
 	if tA == blas.NoTrans {
 		m, k = a.Rows, a.Cols
@@ -419,7 +419,7 @@ func Gemm(tA, tB blas.Transpose, alpha zp.Element, a, b General, beta zp.Element
 //  C = alpha * B * A + beta * C  if s == blas.Right,
 // where A is an n×n or m×m symmetric matrix, B and C are m×n matrices, and
 // alpha is a scalar.
-func Symm(s blas.Side, alpha zp.Element, a Symmetric, b General, beta zp.Element, c General) {
+func Symm(s blas.Side, alpha Element, a Symmetric, b General, beta Element, c General) {
 	var m, n int
 	if s == blas.Left {
 		m, n = a.N, b.Cols
@@ -434,7 +434,7 @@ func Symm(s blas.Side, alpha zp.Element, a Symmetric, b General, beta zp.Element
 //  C = alpha * Aᵀ * A + beta * C  if t == blas.Trans or blas.ConjTrans,
 // where C is an n×n symmetric matrix, A is an n×k matrix if t == blas.NoTrans and
 // a k×n matrix otherwise, and alpha and beta are scalars.
-func Syrk(t blas.Transpose, alpha zp.Element, a General, beta zp.Element, c Symmetric) {
+func Syrk(t blas.Transpose, alpha Element, a General, beta Element, c Symmetric) {
 	var n, k int
 	if t == blas.NoTrans {
 		n, k = a.Rows, a.Cols
@@ -449,7 +449,7 @@ func Syrk(t blas.Transpose, alpha zp.Element, a General, beta zp.Element, c Symm
 //  C = alpha * Aᵀ * B + alpha * Bᵀ * A + beta * C  if t == blas.Trans or blas.ConjTrans,
 // where C is an n×n symmetric matrix, A and B are n×k matrices if t == NoTrans
 // and k×n matrices otherwise, and alpha and beta are scalars.
-func Syr2k(t blas.Transpose, alpha zp.Element, a, b General, beta zp.Element, c Symmetric) {
+func Syr2k(t blas.Transpose, alpha Element, a, b General, beta Element, c Symmetric) {
 	var n, k int
 	if t == blas.NoTrans {
 		n, k = a.Rows, a.Cols
@@ -466,7 +466,7 @@ func Syr2k(t blas.Transpose, alpha zp.Element, a, b General, beta zp.Element, c 
 //  B = alpha * B * Aᵀ  if tA == blas.Trans or blas.ConjTrans, and s == blas.Right,
 // where A is an n×n or m×m triangular matrix, B is an m×n matrix, and alpha is
 // a scalar.
-func Trmm(s blas.Side, tA blas.Transpose, alpha zp.Element, a Triangular, b General) {
+func Trmm(s blas.Side, tA blas.Transpose, alpha Element, a Triangular, b General) {
 	ffblas.Strmm(s, a.Uplo, tA, a.Diag, b.Rows, b.Cols, alpha, a.Data, a.Stride, b.Data, b.Stride)
 }
 
@@ -482,6 +482,6 @@ func Trmm(s blas.Side, tA blas.Transpose, alpha zp.Element, a Triangular, b Gene
 // stored in-place into X.
 //
 // No check is made that A is invertible.
-func Trsm(s blas.Side, tA blas.Transpose, alpha zp.Element, a Triangular, b General) {
+func Trsm(s blas.Side, tA blas.Transpose, alpha Element, a Triangular, b General) {
 	ffblas.Strsm(s, a.Uplo, tA, a.Diag, b.Rows, b.Cols, alpha, a.Data, a.Stride, b.Data, b.Stride)
 }

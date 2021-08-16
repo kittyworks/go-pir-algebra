@@ -9,7 +9,7 @@ import (
 	"gonum.org/v1/gonum/internal/asm"
 )
 
-var _ blas.zp.ElementLevel3 = Implementation{}
+var _ blas.ElementLevel3 = Implementation{}
 
 // Dtrsm solves one of the matrix equations
 //  A * X = alpha * B   if tA == blas.NoTrans and side == blas.Left
@@ -23,7 +23,7 @@ var _ blas.zp.ElementLevel3 = Implementation{}
 // stored in-place into X.
 //
 // No check is made that A is invertible.
-func (Implementation) Dtrsm(s blas.Side, ul blas.Uplo, tA blas.Transpose, d blas.Diag, m, n int, alpha zp.Element, a []zp.Element, lda int, b []zp.Element, ldb int) {
+func (Implementation) Dtrsm(s blas.Side, ul blas.Uplo, tA blas.Transpose, d blas.Diag, m, n int, alpha Element, a []Element, lda int, b []Element, ldb int) {
 	if s != blas.Left && s != blas.Right {
 		panic(badSide)
 	}
@@ -219,7 +219,7 @@ func (Implementation) Dtrsm(s blas.Side, ul blas.Uplo, tA blas.Transpose, d blas
 //  C = alpha * B * A + beta * C  if side == blas.Right
 // where A is an n×n or m×m symmetric matrix, B and C are m×n matrices, and alpha
 // is a scalar.
-func (Implementation) Dsymm(s blas.Side, ul blas.Uplo, m, n int, alpha zp.Element, a []zp.Element, lda int, b []zp.Element, ldb int, beta zp.Element, c []zp.Element, ldc int) {
+func (Implementation) Dsymm(s blas.Side, ul blas.Uplo, m, n int, alpha Element, a []Element, lda int, b []Element, ldb int, beta Element, c []Element, ldc int) {
 	if s != blas.Right && s != blas.Left {
 		panic(badSide)
 	}
@@ -300,7 +300,7 @@ func (Implementation) Dsymm(s blas.Side, ul blas.Uplo, m, n int, alpha zp.Elemen
 			}
 
 			for k := 0; k < i; k++ {
-				var atmp zp.Element
+				var atmp Element
 				if isUpper {
 					atmp = a[k*lda+i]
 				} else {
@@ -310,7 +310,7 @@ func (Implementation) Dsymm(s blas.Side, ul blas.Uplo, m, n int, alpha zp.Elemen
 				asm.AxpyUnitary(atmp, b[k*ldb:k*ldb+n], ctmp)
 			}
 			for k := i + 1; k < m; k++ {
-				var atmp zp.Element
+				var atmp Element
 				if isUpper {
 					atmp = a[i*lda+k]
 				} else {
@@ -326,7 +326,7 @@ func (Implementation) Dsymm(s blas.Side, ul blas.Uplo, m, n int, alpha zp.Elemen
 		for i := 0; i < m; i++ {
 			for j := n - 1; j >= 0; j-- {
 				tmp := alpha * b[i*ldb+j]
-				var tmp2 zp.Element
+				var tmp2 Element
 				atmp := a[j*lda+j+1 : j*lda+n]
 				btmp := b[i*ldb+j+1 : i*ldb+n]
 				ctmp := c[i*ldc+j+1 : i*ldc+n]
@@ -343,7 +343,7 @@ func (Implementation) Dsymm(s blas.Side, ul blas.Uplo, m, n int, alpha zp.Elemen
 	for i := 0; i < m; i++ {
 		for j := 0; j < n; j++ {
 			tmp := alpha * b[i*ldb+j]
-			var tmp2 zp.Element
+			var tmp2 Element
 			atmp := a[j*lda : j*lda+j]
 			btmp := b[i*ldb : i*ldb+j]
 			ctmp := c[i*ldc : i*ldc+j]
@@ -362,7 +362,7 @@ func (Implementation) Dsymm(s blas.Side, ul blas.Uplo, m, n int, alpha zp.Elemen
 //  C = alpha * Aᵀ * A + beta * C  if tA == blas.Trans or tA == blas.ConjTrans
 // where A is an n×k or k×n matrix, C is an n×n symmetric matrix, and alpha and
 // beta are scalars.
-func (Implementation) Dsyrk(ul blas.Uplo, tA blas.Transpose, n, k int, alpha zp.Element, a []zp.Element, lda int, beta zp.Element, c []zp.Element, ldc int) {
+func (Implementation) Dsyrk(ul blas.Uplo, tA blas.Transpose, n, k int, alpha Element, a []Element, lda int, beta Element, c []Element, ldc int) {
 	if ul != blas.Lower && ul != blas.Upper {
 		panic(badUplo)
 	}
@@ -512,7 +512,7 @@ func (Implementation) Dsyrk(ul blas.Uplo, tA blas.Transpose, n, k int, alpha zp.
 //  C = alpha * Aᵀ * B + alpha * Bᵀ * A + beta * C  if tA == blas.Trans or tA == blas.ConjTrans
 // where A and B are n×k or k×n matrices, C is an n×n symmetric matrix, and
 // alpha and beta are scalars.
-func (Implementation) Dsyr2k(ul blas.Uplo, tA blas.Transpose, n, k int, alpha zp.Element, a []zp.Element, lda int, b []zp.Element, ldb int, beta zp.Element, c []zp.Element, ldc int) {
+func (Implementation) Dsyr2k(ul blas.Uplo, tA blas.Transpose, n, k int, alpha Element, a []Element, lda int, b []Element, ldb int, beta Element, c []Element, ldc int) {
 	if ul != blas.Lower && ul != blas.Upper {
 		panic(badUplo)
 	}
@@ -600,7 +600,7 @@ func (Implementation) Dsyr2k(ul blas.Uplo, tA blas.Transpose, n, k int, alpha zp
 				if beta == 0 {
 					for jc := range ctmp {
 						j := i + jc
-						var tmp1, tmp2 zp.Element
+						var tmp1, tmp2 Element
 						binner := b[j*ldb : j*ldb+k]
 						for l, v := range a[j*lda : j*lda+k] {
 							tmp1 += v * btmp[l]
@@ -611,7 +611,7 @@ func (Implementation) Dsyr2k(ul blas.Uplo, tA blas.Transpose, n, k int, alpha zp
 				} else {
 					for jc := range ctmp {
 						j := i + jc
-						var tmp1, tmp2 zp.Element
+						var tmp1, tmp2 Element
 						binner := b[j*ldb : j*ldb+k]
 						for l, v := range a[j*lda : j*lda+k] {
 							tmp1 += v * btmp[l]
@@ -630,7 +630,7 @@ func (Implementation) Dsyr2k(ul blas.Uplo, tA blas.Transpose, n, k int, alpha zp
 			ctmp := c[i*ldc : i*ldc+i+1]
 			if beta == 0 {
 				for j := 0; j <= i; j++ {
-					var tmp1, tmp2 zp.Element
+					var tmp1, tmp2 Element
 					binner := b[j*ldb : j*ldb+k]
 					for l, v := range a[j*lda : j*lda+k] {
 						tmp1 += v * btmp[l]
@@ -640,7 +640,7 @@ func (Implementation) Dsyr2k(ul blas.Uplo, tA blas.Transpose, n, k int, alpha zp
 				}
 			} else {
 				for j := 0; j <= i; j++ {
-					var tmp1, tmp2 zp.Element
+					var tmp1, tmp2 Element
 					binner := b[j*ldb : j*ldb+k]
 					for l, v := range a[j*lda : j*lda+k] {
 						tmp1 += v * btmp[l]
@@ -712,7 +712,7 @@ func (Implementation) Dsyr2k(ul blas.Uplo, tA blas.Transpose, n, k int, alpha zp
 //  B = alpha * B * A   if tA == blas.NoTrans and side == blas.Right
 //  B = alpha * B * Aᵀ  if tA == blas.Trans or blas.ConjTrans, and side == blas.Right
 // where A is an n×n or m×m triangular matrix, B is an m×n matrix, and alpha is a scalar.
-func (Implementation) Dtrmm(s blas.Side, ul blas.Uplo, tA blas.Transpose, d blas.Diag, m, n int, alpha zp.Element, a []zp.Element, lda int, b []zp.Element, ldb int) {
+func (Implementation) Dtrmm(s blas.Side, ul blas.Uplo, tA blas.Transpose, d blas.Diag, m, n int, alpha Element, a []Element, lda int, b []Element, ldb int) {
 	if s != blas.Left && s != blas.Right {
 		panic(badSide)
 	}

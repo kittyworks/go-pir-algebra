@@ -10,7 +10,7 @@ import (
 
 // Ddot computes the dot product of the two vectors
 //  \sum_i x[i]*y[i]
-func (Implementation) Ddot(n int, x []zp.Element, incX int, y []zp.Element, incY int) zp.Element {
+func (Implementation) Ddot(n int, x []Element, incX int, y []Element, incY int) Element {
 	if incX == 0 {
 		panic(zeroIncX)
 	}
