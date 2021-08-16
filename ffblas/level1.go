@@ -8,7 +8,6 @@ import (
 	"math"
 
 	"gonum.org/v1/gonum/blas"
-	"gonum.org/v1/gonum/internal/asm"
 )
 
 // Dnrm2 computes the Euclidean norm of a vector,

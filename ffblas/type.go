@@ -6,8 +6,6 @@ package ffblas
 
 import (
 	"gonum.org/v1/gonum/blas/gonum"
-	"github.com/kittyworks/go-pir-algebra/zp"
-	"github.com/kittyworks/go-pir-algebra/ffblas"
 )
 
 var ffblas blas.FF = gonum.Implementation{}

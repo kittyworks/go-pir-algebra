@@ -6,7 +6,6 @@ package gonum
 
 import (
 	"gonum.org/v1/gonum/blas"
-	"gonum.org/v1/gonum/internal/asm"
 )
 
 var _ blas.ElementLevel2 = Implementation{}

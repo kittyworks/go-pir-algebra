@@ -5,7 +5,6 @@
 package gonum
 
 import (
-	"go-pir-algebra/ffblas/asm"
 )
 
 // Ddot computes the dot product of the two vectors
